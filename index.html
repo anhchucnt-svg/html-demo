@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh Tùng & Lan Anh | Wedding Invitation</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Playfair+Display:ital,wght@0,700;1,700&family=Quicksand:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- GLOBAL STYLES --- */
+        body { font-family: 'Quicksand', sans-serif; overflow-x: hidden; background-color: #fdf8f5; margin: 0; }
+        .font-wedding { font-family: 'Dancing Script', cursive; }
+        .font-serif-title { font-family: 'Playfair Display', serif; }
+
+        /* --- SECTION 1: HERO & INTRO --- */
+        .intro-section { background: #800020; min-height: 400vh; position: relative; } /* Giảm chiều cao chút cho đỡ dài quá */
+        .intro-sticky { position: sticky; top: 0; height: 100vh; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+
+        .small-photo { 
+            position: absolute; z-index: 50; pointer-events: none; opacity: 0; 
+            border: 2px solid white; border-radius: 16px; box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            width: 240px; height: 240px; 
+        }
+        @media (max-width: 768px) { .small-photo { width: 240px; height: 240px; } }
+
+        .groom-photo, .bride-photo, .groom-name, .bride-name, .groom-desc, .bride-desc {
+            opacity: 0; transform: translateY(-80px);
+        }
+
+        /* --- SECTION 2: HORIZONTAL SCROLL --- */
+        .horizontal-overflow { background: linear-gradient(to bottom, #800020, #4a0404); height: 100vh; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+        .horizontal-container { display: flex; will-change: transform; padding-left: 10vw; align-items: flex-end; width: max-content; }
+        .photo-card { flex-shrink: 0; margin-right: 2rem; border-radius: 1.5rem; overflow: hidden; box-shadow: 0 15px 30px rgba(0,0,0,0.5); width: 75vw; height: 45vh; display: flex; flex-direction: column; position: relative; }
+        @media (min-width: 768px) { .photo-card { width: 480px; height: 480px; margin-right: 4rem; } }
+        .ruler-progress { transition: width 0.1s ease-out; }
+
+        /* --- SECTION 3: EVENTS --- */
+        .bg-event { background-color: #050505; color: white; }
+        .event-line { border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .event-row:last-child .event-line { border-bottom: none; }
+
+        /* --- SECTION 4: RSVP (PHYSICS ENGINE) --- */
+        .rsvp-container {
+            display: grid;
+            grid-template-columns: 1fr 1.5fr 1fr;
+            gap: 20px;
+            height: 40vh; /* Full màn hình để physics hoạt động tốt */
+            min-height: 320px;
+            background: #000;
+            padding: 20px;
+            box-sizing: border-box;
+            color: white;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Khung chứa vật lý */
+        .physics-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border: 1px dashed rgba(255,255,255,0.2);
+            border-radius: 20px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.02);
+        }
+
+        /* Các mảnh giấy (Note) */
+        .note-body {
+            position: absolute;
+            width: 180px;
+            padding: 15px;
+            background: white;
+            color: #333;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 11px;
+            line-height: 1.4;
+            user-select: none;
+            cursor: grab;
+            will-change: transform;
+            transform-origin: 50% 50%;
+            opacity: 0; /* Ẩn lúc đầu để script handle */
+            animation: fadeIn 0.5s forwards;
+        }
+        .note-body:active { cursor: grabbing; box-shadow: 0 10px 25px rgba(0,0,0,0.4); }
+        .note-body b { display: block; color: #800020; margin-bottom: 4px; border-bottom: 1px solid #eee; padding-bottom: 2px; }
+        
+        @keyframes fadeIn { to { opacity: 1; } }
+
+        /* Form Styling */
+        .rsvp-form-side h2 { font-family: 'Dancing Script', cursive; color: #ff9d42; }
+        .input-field { width: 100%; background: #fff; padding: 12px; border-radius: 8px; margin-bottom: 12px; border:none; color: #333; }
+        .btn-send { width: 100%; background: #ff9d42; padding: 12px; border-radius: 8px; font-weight: bold; text-transform: uppercase; cursor: pointer; color: white; transition: 0.3s; }
+        .btn-send:hover { background: #e08226; }
+
+        .qr-box { background: white; padding: 10px; border-radius: 15px; display: inline-block; width: 160px; }
+
+        @media (max-width: 1024px) {
+            .rsvp-container { grid-template-columns: 1fr; height: auto; }
+            .physics-wrapper { height: 400px; margin-bottom: 20px; }
+            .rsvp-form-side, .qr-side { padding: 0 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <section class="relative h-screen flex items-center justify-center overflow-hidden bg-[#fdf8f5]">
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=2000" class="w-full h-full object-cover opacity-50 hero-img scale-125">
+        </div>
+        <div class="z-10 text-center px-4 hero-content">
+            <h2 class="text-pink-600 tracking-[0.3em] uppercase mb-4 text-xs font-bold opacity-0 translate-y-10">Save The Date</h2>
+            <h1 class="font-wedding text-6xl md:text-9xl text-gray-800 mb-6 opacity-0 translate-y-10">Tùng & Anh</h1>
+            <p class="text-xl md:text-2xl font-light italic text-gray-600 opacity-0 translate-y-10">02 . 09 . 2025</p>
+        </div>
+    </section>
+
+    <section class="intro-section">
+        <div class="intro-sticky">
+            <div id="small-photos-layer" class="absolute inset-0 pointer-events-none flex items-center justify-center"></div>
+
+            <div class="container mx-auto flex flex-col md:flex-row items-center justify-around gap-12 relative z-10 px-4">
+                <div class="flex flex-col md:flex-row items-center gap-6 text-center md:text-right">
+                    <div class="order-2 md:order-1">
+                        <h3 class="groom-name font-serif-title text-3xl text-white mb-2">Thanh Tùng</h3>
+                        <div class="groom-desc bg-white/10 p-5 rounded-3xl backdrop-blur-md max-w-[260px]">
+                            <p class="text-white text-xs italic">"Yêu nhau từ thuở nghìn tiền, nay bê về chung một nhà."</p>
+                        </div>
+                    </div>
+                    <div class="groom-photo">
+                        <img src="https://drive.google.com/file/d/1djWnVx1_iAyRmopmqHiR4rbxYI9a7g9E/view?usp=sharing" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+                <div class="couple-photo-wrap">
+                    <div id="main-photo" class="couple-photo w-[260px] h-[360px] md:w-[350px] md:h-[480px] rounded-[3rem] border-[10px] border-white shadow-2xl overflow-hidden scale-0 transform-gpu">
+                        <img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=800" class="w-full h-full object-cover">
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                    <div class="bride-photo">
+                        <img src="https://drive.google.com/file/d/1V7MktKOArjjtIOUDDKHal-Jxx7sE_Nkd/view?usp=sharing" class="w-full h-full object-cover">
+                    </div>
+                    <div>
+                        <h3 class="bride-name font-serif-title text-3xl text-white mb-2">Lan Anh</h3>
+                        <div class="bride-desc bg-white/10 p-5 rounded-3xl backdrop-blur-md max-w-[260px]">
+                            <p class="text-white text-xs italic">"Chỉ cần anh luôn bên cạnh, thương em chẳng ngại sóng gió."</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="horizontal-overflow" id="horizontal-section">
+        <div class="px-8 md:px-16 mb-8 text-white relative z-20">
+            <h2 class="font-serif-title text-4xl md:text-6xl italic mb-2">Hành trình yêu</h2>
+            <p class="text-red-200 uppercase tracking-widest text-[10px] md:text-xs">Mắc cười • 2022 - 2025</p>
+        </div>
+
+        <div class="horizontal-container">
+            <div class="photo-card !h-[30vh] md:!h-[250px]"><img src="https://images.unsplash.com/photo-1522673607200-1648832cee98?w=500" class="w-full h-full object-cover"><p class="text-white/60 text-[10px] mt-2 text-center">05/2022</p></div>
+            <div class="photo-card !h-[45vh] md:!h-[400px] self-center"><img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=500" class="w-full h-full object-cover"><p class="text-white/60 text-[10px] mt-2 text-center">First Anniversary</p></div>
+            <div class="photo-card !h-[60vh] md:!h-[550px]"><img src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=500" class="w-full h-full object-cover"><p class="text-white/60 text-[10px] mt-2 text-center">Travel Together</p></div>
+            <div class="photo-card !h-[50vh] md:!h-[450px] self-center"><img src="https://images.unsplash.com/photo-1494774157365-9e04c6720e47?w=500" class="w-full h-full object-cover"><p class="text-white/60 text-[10px] mt-2 text-center">The Proposal</p></div><div class="photo-card !h-[30vh] md:!h-[250px]"><img src="https://images.unsplash.com/photo-1522673607200-1648832cee98?w=500" class="w-full h-full object-cover"><p class="text-white/60 text-[10px] mt-2 text-center">05/2022</p></div>
+            <div class="photo-card !h-[45vh] md:!h-[400px] self-center"><img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=500" class="w-full h-full object-cover"><p class="text-white/60 text-[10px] mt-2 text-center">First Anniversary</p></div>
+            <div class="photo-card !h-[60vh] md:!h-[550px]"><img src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=500" class="w-full h-full object-cover"><p class="text-white/60 text-[10px] mt-2 text-center">Travel Together</p></div>
+            <div class="photo-card !h-[50vh] md:!h-[450px] self-center"><img src="https://images.unsplash.com/photo-1494774157365-9e04c6720e47?w=500" class="w-full h-full object-cover"><p class="text-white/60 text-[10px] mt-2 text-center">The Proposal</p></div><div class="photo-card !h-[30vh] md:!h-[250px]"><img src="https://images.unsplash.com/photo-1522673607200-1648832cee98?w=500" class="w-full h-full object-cover"><p class="text-white/60 text-[10px] mt-2 text-center">05/2022</p></div>
+            <div class="photo-card !h-[45vh] md:!h-[400px] self-center"><img src="https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=500" class="w-full h-full object-cover"><p class="text-white/60 text-[10px] mt-2 text-center">First Anniversary</p></div>
+            <div class="photo-card !h-[60vh] md:!h-[550px]"><img src="https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=500" class="w-full h-full object-cover"><p class="text-white/60 text-[10px] mt-2 text-center">Travel Together</p></div>
+            <div class="photo-card !h-[50vh] md:!h-[450px] self-center"><img src="https://images.unsplash.com/photo-1494774157365-9e04c6720e47?w=500" class="w-full h-full object-cover"><p class="text-white/60 text-[10px] mt-2 text-center">The Proposal</p></div>
+            </div>
+
+        <div class="mx-8 md:mx-16 mt-10">
+            <div class="h-[2px] bg-white/20 w-full relative">
+                <div class="ruler-progress absolute top-0 left-0 h-full bg-red-400 w-0"></div>
+            </div>
+            <div class="flex justify-between mt-3 text-white/40 text-[10px] uppercase tracking-tighter font-bold">
+                <span>2022</span>
+                <span>2025</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="bg-event py-20 px-6 md:px-20 relative overflow-hidden text-white">
+        <div class="absolute inset-0 opacity-20 z-0">
+            <img src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1000" class="w-full h-full object-cover grayscale">
+        </div>
+
+        <div class="max-w-6xl mx-auto relative z-10">
+            <div class="event-row opacity-0 translate-y-10 transition-all duration-1000 py-10">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.2em] text-gray-400 mb-1">Tư gia nhà trai</p>
+                        <p class="text-xs text-gray-500 mb-2">Phạm Thái Bường, Phường Phước Hậu, Vĩnh Long</p>
+                        <h2 class="font-serif-title text-4xl md:text-5xl">Lễ Gia Tiên</h2>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xl md:text-2xl font-light">Thứ 5 | <span class="font-bold">18/12/2025</span></p>
+                        <p class="text-4xl md:text-5xl font-serif-title mt-2">11:00</p>
+                    </div>
+                </div>
+                <div class="event-line"></div>
+            </div>
+
+            <div class="event-row opacity-0 translate-y-10 transition-all duration-1000 py-10">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.2em] text-gray-400 mb-1">Nhà Hàng Đức Phát Hoàng Gia</p>
+                        <p class="text-xs text-gray-500 mb-2">Phạm Thái Bường, Phường Phước Hậu, Vĩnh Long</p>
+                        <h2 class="font-serif-title text-4xl md:text-5xl">Tiệc cưới</h2>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xl md:text-2xl font-light">Thứ 7 | <span class="font-bold">20/12/2025</span></p>
+                        <p class="text-4xl md:text-5xl font-serif-title mt-2">11:00 - 13:00</p>
+                    </div>
+                </div>
+                <div class="event-line"></div>
+            </div>
+
+            <div class="event-row opacity-0 translate-y-10 transition-all duration-1000 py-10">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div>
+                        <p class="text-xs uppercase tracking-[0.2em] text-gray-400 mb-1">Riverside Palace</p>
+                        <p class="text-xs text-gray-500 mb-2">Bến Vân Đồn, Vĩnh Hội, Tp.HCM</p>
+                        <h2 class="font-serif-title text-4xl md:text-5xl">Tiệc báo hỷ</h2>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xl md:text-2xl font-light">Thứ 7 | <span class="font-bold">10/01/2026</span></p>
+                        <p class="text-4xl md:text-5xl font-serif-title mt-2">19:00 - 22:00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="rsvp-container">
+        <div class="rsvp-form-side flex flex-col justify-center">
+            <h2 class="text-4xl mb-4">Chúc gì hong?</h2>
+            <p class="text-sm mb-6 opacity-80">Lời chúc của bạn là món quà chúng mình trân quý nhất, thiệt!</p>
+            <form id="wishForm" onsubmit="addWish(event)">
+                <input id="userName" type="text" placeholder="Họ tên bạn" class="input-field" required>
+                <textarea id="userMsg" placeholder="Điều bạn muốn gửi đến tụi mình" class="input-field h-32" required></textarea>
+                <button type="submit" class="btn-send">Bấm nút gửi</button>
+            </form>
+        </div>
+
+        <div class="physics-wrapper" id="scene">
+            <div class="note-body"><b>Lâm Nhật Quang</b>Chúc hai bạn trăm năm hạnh phúc nhé!</div>
+            <div class="note-body"><b>Bà Thư quẹt quà</b>Yêu nhau từ thuở nghìn tiền, nay bê về chung một nhà...</div>
+            <div class="note-body"><b>Dương VSLM</b>Chúc cô dâu chú rể luôn xanh lá, không xa lìa!</div>
+            <div class="note-body"><b>Quinn</b>Mãi hạnh phúc và cười thật nhiều nhé hai bạn.</div>
+            <div class="note-body"><b>Hội Bạn Thân</b>Nhớ chừa bàn riêng cho tụi này quẩy tới bến nha! 🍺</div>
+        </div>
+
+        <div class="qr-side flex flex-col justify-center items-center">
+            <p class="text-xs mb-4 opacity-70 text-center">(Cơ mà nếu bạn muốn góp chút lộc, dâu rể xin nhận bằng cả tấm lòng!)</p>
+            <div class="qr-box text-center">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=WeddingPayment" alt="QR Code" class="w-full">
+                <div class="flex justify-between mt-2 px-2">
+                    <span class="text-[8px] text-blue-600 font-bold">MOMO</span>
+                    <span class="text-[8px] text-red-600 font-bold">VIETQR</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        // --- PHẦN 1: ANIMATIONS TRANG (GSAP) ---
+        window.addEventListener('load', function() {
+            const isMobile = window.innerWidth < 768;
+
+            // 1. Hero Animation
+            gsap.to(".hero-content *", { opacity: 1, y: 0, stagger: 0.3, duration: 1.2, ease: "power4.out" });
+
+            // 2. Tạo ảnh nhỏ Intro
+            const layer = document.getElementById('small-photos-layer');
+            for(let i=0; i<2; i++) {
+                const img = document.createElement('div');
+                img.className = 'small-photo';
+                img.innerHTML = `<img src="https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1000; https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1000${i}" class="w-full h-full object-cover rounded-lg">`;
+                layer.appendChild(img);
+            }
+
+            // 3. Timeline Intro Scrub
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: ".intro-section",
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 1.5,
+                }
+            });
+
+            tl.fromTo(".small-photo", 
+                { x: (i) => (i % 2 === 0 ? -window.innerWidth : window.innerWidth), y: (i) => (Math.random() - 0.5) * window.innerHeight, scale: 0.1, opacity: 0, rotation: 180 },
+                { x: 0, y: 0, scale: 1, opacity: 1, rotation: 0, duration: 6, stagger: 0.3 }
+            )
+            .to(".small-photo", { scale: 0, opacity: 0, duration: 2, stagger: 0.1 }, "+=1")
+            .to("#main-photo", { scale: 1, duration: 3, ease: "back.out(1.2)" }, "-=1")
+            .to(".groom-photo", { opacity: 1, y: 0, duration: 2.5, ease: "power2.out" }, "+=0.5")
+            .to(".groom-name", { opacity: 1, y: 0, duration: 2, ease: "power2.out" }, "+=0.3")
+            .to(".groom-desc", { opacity: 1, y: 0, duration: 2, ease: "power2.out" }, "+=0.3")
+            .to(".bride-photo", { opacity: 1, y: 0, duration: 2.5, ease: "power2.out" }, "+=0.8")
+            .to(".bride-name", { opacity: 1, y: 0, duration: 2, ease: "power2.out" }, "+=0.3")
+            .to(".bride-desc", { opacity: 1, y: 0, duration: 2, ease: "power2.out" }, "+=0.3");
+
+            // 4. Horizontal Scroll
+            const container = document.querySelector(".horizontal-container");
+            const ruler = document.querySelector(".ruler-progress");
+            if (container) {
+                const scrollWidth = container.scrollWidth - window.innerWidth + (isMobile ? 40 : window.innerWidth * 0.1);
+                gsap.to(container, {
+                    x: -scrollWidth, ease: "none",
+                    scrollTrigger: { trigger: "#horizontal-section", start: "top top", end: () => "+=" + scrollWidth, pin: true, scrub: 1, invalidateOnRefresh: true }
+                });
+                gsap.to(ruler, {
+                    width: "100%", ease: "none",
+                    scrollTrigger: { trigger: "#horizontal-section", start: "top top", end: () => "+=" + scrollWidth, scrub: 1 }
+                });
+            }
+
+            // 5. Events Show up
+            gsap.utils.toArray(".event-row").forEach((row) => {
+                gsap.to(row, {
+                    scrollTrigger: { trigger: row, start: "top 85%", toggleActions: "play none none reverse" },
+                    opacity: 1, y: 0, duration: 1, ease: "power2.out"
+                });
+            });
+
+            // --- PHẦN 2: PHYSICS ENGINE (MATTER.JS) ---
+            initPhysics();
+        });
+
+        // HÀM KHỞI TẠO VẬT LÝ
+        function initPhysics() {
+            const Engine = Matter.Engine,
+                  Render = Matter.Render,
+                  Runner = Matter.Runner,
+                  Bodies = Matter.Bodies,
+                  Composite = Matter.Composite,
+                  Mouse = Matter.Mouse,
+                  MouseConstraint = Matter.MouseConstraint;
+
+            const engine = Engine.create();
+            const world = engine.world;
+            engine.gravity.y = 1; // Trọng lực nhẹ
+
+            const scene = document.getElementById('scene');
+            const width = scene.clientWidth;
+            const height = scene.clientHeight;
+
+            // Tường bao quanh
+            const wallOptions = { isStatic: true, render: { visible: false } };
+            const walls = [
+                Bodies.rectangle(width/2, height + 25, width, 50, wallOptions), // Sàn
+                Bodies.rectangle(width/2, -25, width, 50, wallOptions),         // Trần
+                Bodies.rectangle(width + 25, height/2, 50, height, wallOptions),// Phải
+                Bodies.rectangle(-25, height/2, 50, height, wallOptions)        // Trái
+            ];
+            Composite.add(world, walls);
+
+            // Tạo Bodies cho các tin nhắn có sẵn
+            const noteElements = document.querySelectorAll('.note-body');
+            const bodies = [];
+            
+            noteElements.forEach((el) => {
+                const x = Math.random() * (width - 100) + 50;
+                const y = Math.random() * (height - 100) + 50;
+                const body = Bodies.rectangle(x, y, 180, el.offsetHeight, {
+                    restitution: 0.9, friction: 0.005, frictionAir: 0.02, chamfer: { radius: 10 },
+                    angle: (Math.random() - 0.5) * 0.5
+                });
+                body.render.htmlElement = el;
+                bodies.push(body);
+            });
+            Composite.add(world, bodies);
+
+            // Mouse Drag
+            const mouse = Mouse.create(scene);
+            const mouseConstraint = MouseConstraint.create(engine, {
+                mouse: mouse, constraint: { stiffness: 0.2, render: { visible: false } }
+            });
+            mouse.pixelRatio = window.devicePixelRatio; 
+            // Fix scroll issue on mobile when not dragging
+            mouse.element.removeEventListener("mousewheel", mouse.mousewheel);
+            mouse.element.removeEventListener("DOMMouseScroll", mouse.mousewheel);
+
+            Composite.add(world, mouseConstraint);
+
+            // Runner
+            const runner = Runner.create();
+            Runner.run(runner, engine);
+
+            // Sync Physics -> CSS
+            (function update() {
+                const allBodies = Composite.allBodies(world);
+                allBodies.forEach(body => {
+                    if (body.render.htmlElement) {
+                        const el = body.render.htmlElement;
+                        const x = body.position.x - el.offsetWidth / 2;
+                        const y = body.position.y - el.offsetHeight / 2;
+                        el.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${body.angle}rad)`;
+                    }
+                });
+                requestAnimationFrame(update);
+            })();
+
+            // Expose addWish to global
+            window.physicsWorld = world;
+            window.physicsWidth = width;
+        }
+
+        // Hàm thêm lời chúc
+        window.addWish = function(e) {
+            e.preventDefault();
+            const name = document.getElementById('userName').value;
+            const msg = document.getElementById('userMsg').value;
+            const scene = document.getElementById('scene');
+            
+            if(!name || !msg) return;
+
+            const newDiv = document.createElement('div');
+            newDiv.className = 'note-body';
+            newDiv.innerHTML = `<b>${name}</b>${msg}`;
+            scene.appendChild(newDiv);
+
+            // Thêm vật lý
+            const Bodies = Matter.Bodies;
+            const newBody = Bodies.rectangle(window.physicsWidth/2, -50, 180, 80, {
+                restitution: 0.9, frictionAir: 0.02, chamfer: { radius: 10 }
+            });
+            newBody.render.htmlElement = newDiv;
+            
+            Matter.Composite.add(window.physicsWorld, newBody);
+            document.getElementById('wishForm').reset();
+        };
+    </script>
+</body>
+</html>
